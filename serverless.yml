@@ -1,0 +1,55 @@
+service: kaeliumbot
+frameworkVersion: "3"
+useDotenv: true
+
+custom:
+  pythonRequirements:
+    usePoetry: true
+    dockerizePip: true
+  dynamoTableName: ${self:service}-${sls:stage}
+  dynamodbTableArn: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${self:service}-${sls:stage}
+  dynamodbAppResourcesArn: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${self:service}-${sls:stage}/*
+provider:
+  name: aws
+  runtime: python3.9
+
+plugins:
+  - serverless-python-requirements
+  - serverless-iam-roles-per-function
+
+functions:
+  api:
+    handler: kaeliumbot/lambda.handler
+    events:
+      - httpApi:
+          path: "*"
+          method: "*"
+    environment:
+      BOT_TOKEN: ${env:BOT_TOKEN}
+
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:Query
+        Resource:
+          - ${self:custom.dynamodbTableArn}
+          - ${self:custom.dynamodbAppResourcesArn}
+resources:
+  Resources:
+    DynamodbTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.dynamoTableName}
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST

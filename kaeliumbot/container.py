@@ -1,5 +1,7 @@
 from dependency_injector import containers, providers
 
+from kaeliumbot.settings import Settings
+
 
 class Container(containers.DeclarativeContainer):
-    config = providers.Configuration()
+    settings = providers.Singleton(Settings)

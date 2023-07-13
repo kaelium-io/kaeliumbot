@@ -1,12 +1,17 @@
-from bot import bot
-from container import Container
 import sys
+
+from dotenv import load_dotenv
+
+from kaeliumbot.bot import bot
+from kaeliumbot.container import Container
 
 
 def main() -> int:
+    load_dotenv()
     container = Container()
-    container.config.from_ini("config.ini")
-    bot.token = container.config.bot.token()
+    settings = container.settings()
+
+    bot.token = settings.telegram_bot_token
     if bot.get_webhook_info().url:
         print("removing webhook...")
         bot.remove_webhook()
@@ -18,7 +23,7 @@ def main() -> int:
 
     if len(sys.argv) > 1 and sys.argv[1] == "set-wh":
         print("setting webhook...")
-        bot.set_webhook(url=container.config.bot.api_gw_url())
+        bot.set_webhook(url=settings.api_gateway_url)
     return 0
 
 
